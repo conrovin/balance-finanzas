@@ -136,3 +136,4 @@ Deno.serve(async (req) => {
     return new Response("ok"); // Telegram reintenta si no respondemos 200
   }
 });
+Eliminar archivo
