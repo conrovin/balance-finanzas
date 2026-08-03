@@ -1,0 +1,22 @@
+{
+  "name": "Balance — Control de Finanzas",
+  "short_name": "Balance",
+  "description": "Control de ingresos y gastos multi-cuenta y multi-moneda",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F7F5EF",
+  "theme_color": "#1B2A2F",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='36' fill='%231B2A2F'/%3E%3Ctext x='96' y='134' font-size='108' text-anchor='middle' fill='%23C9A227' font-family='serif'%3EB%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%231B2A2F'/%3E%3Ctext x='256' y='358' font-size='288' text-anchor='middle' fill='%23C9A227' font-family='serif'%3EB%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
