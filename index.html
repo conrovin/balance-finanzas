@@ -174,7 +174,76 @@
   .bar-fill{height:100%;background:linear-gradient(90deg,var(--rust),var(--gold));border-radius:4px;width:0;transition:width .7s cubic-bezier(.4,0,.2,1);}
   .bar-row .bar-val{width:90px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--text);}
 
+  /* ---------- DASHBOARD PREMIUM ---------- */
+  .dash-section-title{font-size:15px;font-weight:600;color:var(--text);margin:8px 0 16px;}
+
+  .hero-balance{
+    position:relative;overflow:hidden;
+    background:linear-gradient(150deg, var(--surface-3) 0%, var(--surface) 55%, var(--surface) 100%);
+    border:1px solid var(--border);border-radius:20px;
+    padding:38px 40px 34px;margin-bottom:26px;box-shadow:var(--shadow);
+  }
+  .hero-balance::before{
+    content:'';position:absolute;top:-60%;left:-15%;width:60%;height:220%;
+    background:radial-gradient(circle, rgba(124,158,255,.22), transparent 65%);
+    animation:pulseGlow 5s ease-in-out infinite;pointer-events:none;
+  }
+  .hero-balance::after{
+    content:'';position:absolute;bottom:-70%;right:-10%;width:50%;height:200%;
+    background:radial-gradient(circle, rgba(232,196,104,.10), transparent 65%);
+    pointer-events:none;
+  }
+  .hero-balance-label{position:relative;z-index:1;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  .hero-balance-value{position:relative;z-index:1;font-size:52px;font-weight:600;color:#fff;margin-top:10px;line-height:1;}
+  .hero-balance-row{position:relative;z-index:1;display:flex;align-items:center;gap:12px;margin-top:14px;}
+  .hero-balance-currency{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:3px 8px;}
+  .hero-balance-delta{font-size:13px;color:var(--green);font-weight:500;}
+  .hero-balance-delta.negativa{color:var(--rust);}
+
+  .mini-kpi-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:34px;}
+  .mini-kpi{
+    flex:1;min-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:20px 22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;
+  }
+  .mini-kpi .mini-kpi-top{display:flex;align-items:center;gap:10px;}
+  .mini-kpi .mini-kpi-icon{
+    width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+  }
+  .mini-kpi.ingreso .mini-kpi-icon{background:var(--green-soft);color:var(--green);}
+  .mini-kpi.gasto .mini-kpi-icon{background:var(--rust-soft);color:var(--rust);}
+  .mini-kpi .mini-kpi-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+  .mini-kpi .mini-kpi-value{font-family:'IBM Plex Mono',monospace;font-size:27px;font-weight:600;}
+  .mini-kpi.ingreso .mini-kpi-value{color:var(--green);}
+  .mini-kpi.gasto .mini-kpi-value{color:var(--rust);}
+  .mini-kpi .mini-kpi-compare{font-size:12px;color:var(--muted-2);}
+
+  .evolution-placeholder{
+    border:1px solid var(--border);border-radius:18px;background:var(--surface);
+    height:280px;margin-bottom:34px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);
+  }
+  .evolution-inner{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--muted-2);}
+  .evolution-inner svg{width:34px;height:34px;opacity:.6;}
+  .evolution-inner span{font-size:13px;}
+
+  .acc-card{display:flex;flex-direction:column;gap:14px;}
+  .acc-card .acc-top-row{display:flex;justify-content:space-between;align-items:flex-start;}
+  .acc-card .acc-icon-badge{
+    width:42px;height:42px;border-radius:12px;background:var(--surface-2);
+    display:flex;align-items:center;justify-content:center;font-size:20px;
+  }
+  .acc-card .acc-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:4px;}
+  .acc-card .acc-name{font-size:13px;color:var(--muted);}
+  .acc-card .acc-bal{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--text);}
+  .acc-card .acc-currency{font-size:11px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;}
+
+  .ledger-row{padding:16px 4px;gap:12px;}
+  .ledger-row:hover{background:var(--surface-2);border-radius:12px;}
+  .ledger-left .cat-icon{width:38px;height:38px;font-size:17px;border-radius:11px;}
+  .ledger-left .desc{font-size:14.5px;}
+  .ledger-left .meta{margin-top:2px;}
+
   /* ---------- FORMS / LISTS ---------- */
+
   .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
   .btn-add{
     background:var(--accent);color:#0F1417;border:none;border-radius:9px;
@@ -307,9 +376,29 @@
       <section id="view-dashboard">
         <h2 class="page-title">Dashboard</h2>
         <p class="page-sub" id="dash-mes-label">Resumen del mes</p>
-        <div class="cards-row" id="kpi-row"></div>
-        <h3 style="font-size:15px;margin:0 0 12px;">Cuentas</h3>
+
+        <div class="hero-balance">
+          <div class="hero-balance-label">Balance total</div>
+          <div class="hero-balance-value mono" id="hero-balance-value">0.00</div>
+          <div class="hero-balance-row">
+            <span class="hero-balance-currency" id="hero-balance-currency">PEN</span>
+            <span class="hero-balance-delta" id="hero-balance-delta">+0.0% vs. mes anterior</span>
+          </div>
+        </div>
+
+        <div class="mini-kpi-row" id="kpi-row"></div>
+
+        <div class="dash-section-title">Evolución del patrimonio</div>
+        <div class="evolution-placeholder">
+          <div class="evolution-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 19h16"/><path d="M4 15l4-5 4 3 5-8 3 4"/></svg>
+            <span>Gráfico de patrimonio próximamente</span>
+          </div>
+        </div>
+
+        <div class="dash-section-title">Cuentas</div>
         <div class="accounts-grid" id="accounts-grid"></div>
+
         <div class="section-block">
           <h3>Ingresos vs. gastos por categoría (este mes)</h3>
           <div id="cat-bars"></div>
@@ -551,17 +640,36 @@ function renderDashboard(){
   const gastoMes = movsMes.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
   const consolidado = cuentas.reduce((s,c)=> s + aMonedaBase(saldoCuenta(c.id), c.moneda), 0);
 
+  document.getElementById('hero-balance-value').textContent = fmt(consolidado);
+  document.getElementById('hero-balance-currency').textContent = config.moneda_base;
+  const deltaEl = document.getElementById('hero-balance-delta');
+  deltaEl.textContent = '+0.0% vs. mes anterior';
+  deltaEl.className = 'hero-balance-delta';
+
   document.getElementById('kpi-row').innerHTML = `
-    <div class="kpi-card consolidado"><div class="label">Balance consolidado (${config.moneda_base})</div><div class="value">${fmt(consolidado)}</div></div>
-    <div class="kpi-card"><div class="label">Ingresos del mes</div><div class="value" style="color:var(--green)">+${fmt(ingresoMes)}</div></div>
-    <div class="kpi-card"><div class="label">Gastos del mes</div><div class="value" style="color:var(--rust)">-${fmt(gastoMes)}</div></div>
+    <div class="mini-kpi ingreso">
+      <div class="mini-kpi-top"><span class="mini-kpi-icon">↑</span><span class="mini-kpi-label">Ingresos del mes</span></div>
+      <div class="mini-kpi-value mono">+${fmt(ingresoMes)}</div>
+      <div class="mini-kpi-compare">+0.0% vs. mes anterior</div>
+    </div>
+    <div class="mini-kpi gasto">
+      <div class="mini-kpi-top"><span class="mini-kpi-icon">↓</span><span class="mini-kpi-label">Gastos del mes</span></div>
+      <div class="mini-kpi-value mono">-${fmt(gastoMes)}</div>
+      <div class="mini-kpi-compare">+0.0% vs. mes anterior</div>
+    </div>
   `;
 
   document.getElementById('accounts-grid').innerHTML = cuentas.map(c=>`
     <div class="acc-card">
-      <div class="top"><span class="icon">${c.icono||'💰'}</span><span class="name">${c.moneda}</span></div>
-      <div class="bal mono">${c.moneda} ${fmt(saldoCuenta(c.id))}</div>
-      <div class="name" style="margin-top:4px;">${c.nombre}</div>
+      <div class="acc-top-row">
+        <span class="acc-icon-badge">${c.icono||'💰'}</span>
+        <span class="acc-dot"></span>
+      </div>
+      <div>
+        <div class="acc-bal mono">${fmt(saldoCuenta(c.id))}</div>
+        <div class="acc-currency">${c.moneda}</div>
+      </div>
+      <div class="acc-name">${c.nombre}</div>
     </div>
   `).join('') || `<div class="empty-state">Aún no tienes cuentas.</div>`;
 
