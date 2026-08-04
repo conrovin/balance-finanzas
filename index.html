@@ -242,7 +242,65 @@
   .ledger-left .desc{font-size:14.5px;}
   .ledger-left .meta{margin-top:2px;}
 
+  /* ---------- CUENTAS PREMIUM ---------- */
+  .btn-add-icon{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:12px;}
+  .btn-add-plus{font-size:16px;line-height:1;}
+
+  .cuentas-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  }
+  @media (max-width:1100px){ .cuentas-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:640px){ .cuentas-grid{grid-template-columns:1fr;} }
+
+  .bank-card{
+    position:relative;background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:22px 22px 20px;overflow:hidden;box-shadow:var(--shadow);
+    transition:transform .25s cubic-bezier(.2,.8,.3,1), box-shadow .25s ease, border-color .25s ease;
+    opacity:0;transform:translateY(14px);animation:cardIn .35s cubic-bezier(.2,.8,.3,1) forwards;
+  }
+  .bank-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 4px 10px rgba(0,0,0,.35), 0 20px 40px rgba(0,0,0,.35);
+    border-color:var(--accent);
+  }
+  @keyframes cardIn{ to{opacity:1;transform:translateY(0);} }
+  .bank-card .band{position:absolute;top:0;left:0;right:0;height:5px;}
+  .bank-card .status-dot{
+    position:absolute;top:16px;right:16px;width:9px;height:9px;border-radius:50%;
+    box-shadow:0 0 0 3px rgba(0,0,0,.25);
+  }
+  .bank-card .status-dot.ok{background:var(--green);}
+  .bank-card .status-dot.bajo{background:var(--gold);}
+  .bank-card .status-dot.negativo{background:var(--rust);}
+  .bank-card .bank-top{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+  .bank-card .bank-icon{
+    width:44px;height:44px;border-radius:12px;background:var(--surface-2);
+    display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;
+  }
+  .bank-card .bank-name{font-size:15px;font-weight:600;color:var(--text);}
+  .bank-card .bank-type{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
+  .bank-card .bank-balance{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .bank-card .bank-currency{font-size:11.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;}
+  .bank-card .bank-share{font-size:12px;color:var(--muted);border-top:1px solid var(--border-soft);padding-top:12px;margin-bottom:10px;}
+  .bank-card .bank-share b{color:var(--accent);font-weight:600;}
+  .bank-card .bank-updated{font-size:11px;color:var(--muted-2);}
+  .bank-card .bank-actions{display:flex;gap:8px;margin-top:14px;}
+  .bank-card .bank-actions button{
+    flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);
+    font-size:12.5px;padding:8px;border-radius:8px;transition:color .15s ease,border-color .15s ease;
+  }
+  .bank-card .bank-actions button:hover{color:var(--text);border-color:var(--accent);}
+
+  .cuentas-empty{
+    grid-column:1/-1;text-align:center;padding:64px 24px;background:var(--surface);
+    border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);
+  }
+  .cuentas-empty .icon-big{font-size:40px;margin-bottom:14px;}
+  .cuentas-empty .display{font-size:22px;color:var(--text);margin-bottom:6px;}
+  .cuentas-empty p{color:var(--muted);font-size:13.5px;margin:0 0 22px;}
+
   /* ---------- FORMS / LISTS ---------- */
+
 
   .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
   .btn-add{
@@ -424,8 +482,8 @@
       <section id="view-cuentas" style="display:none;">
         <h2 class="page-title">Cuentas</h2>
         <p class="page-sub">Bancos, efectivo y billeteras — cada una con su propia moneda.</p>
-        <div class="toolbar"><span></span><button class="btn-add" onclick="abrirModalCuenta()">+ Nueva cuenta</button></div>
-        <div class="section-block" id="cuentas-list"></div>
+        <div class="toolbar"><span></span><button class="btn-add btn-add-icon" onclick="abrirModalCuenta()"><span class="btn-add-plus">+</span> Nueva cuenta</button></div>
+        <div class="cuentas-grid" id="cuentas-list"></div>
       </section>
 
       <!-- CATEGORIAS -->
@@ -789,15 +847,60 @@ window.borrarMovimiento = async function(id){
 };
 
 // ---------------- CUENTAS ----------------
+const BANK_COLORS = {
+  bbva:'#0060A0', bcp:'#002E6D', interbank:'#00A65A', scotiabank:'#EC1C2E',
+  yape:'#742284', plin:'#00BCE3', efectivo:'#8A96A0'
+};
+function colorBanco(nombre){
+  const n = (nombre||'').toLowerCase();
+  for(const k in BANK_COLORS){ if(n.includes(k)) return BANK_COLORS[k]; }
+  return 'var(--accent)';
+}
+function tipoCuentaLabel(nombre){
+  const n = (nombre||'').toLowerCase();
+  if(n.includes('efectivo')) return 'Efectivo';
+  if(n.includes('yape')||n.includes('plin')) return 'Billetera digital';
+  if(n.includes('tarjeta')) return 'Tarjeta';
+  return 'Banco';
+}
 function renderCuentasList(){
-  document.getElementById('cuentas-list').innerHTML = cuentas.length ? cuentas.map(c=>`
-    <div class="list-item">
-      <div class="li-info"><span style="font-size:20px;">${c.icono}</span>
-        <div><div>${c.nombre}</div><div class="meta" style="font-size:12px;color:var(--muted);">${c.moneda} · saldo actual: ${fmt(saldoCuenta(c.id))}</div></div>
+  if(!cuentas.length){
+    document.getElementById('cuentas-list').innerHTML = `
+      <div class="cuentas-empty">
+        <div class="icon-big">💳</div>
+        <div class="display">No tienes cuentas todavía</div>
+        <p>Empieza agregando tu primera cuenta para controlar tus finanzas.</p>
+        <button class="btn-add btn-add-icon" onclick="abrirModalCuenta()"><span class="btn-add-plus">+</span> Agregar cuenta</button>
+      </div>`;
+    return;
+  }
+  const patrimonioTotal = cuentas.reduce((s,c)=> s + aMonedaBase(saldoCuenta(c.id), c.moneda), 0) || 1;
+  document.getElementById('cuentas-list').innerHTML = cuentas.map((c,i)=>{
+    const saldo = saldoCuenta(c.id);
+    const share = (aMonedaBase(saldo, c.moneda) / patrimonioTotal * 100);
+    const estado = saldo < 0 ? 'negativo' : saldo < 50 ? 'bajo' : 'ok';
+    const color = colorBanco(c.nombre);
+    return `
+    <div class="bank-card" style="animation-delay:${i*60}ms">
+      <div class="band" style="background:${color}"></div>
+      <div class="status-dot ${estado}"></div>
+      <div class="bank-top">
+        <span class="bank-icon">${c.icono||'💰'}</span>
+        <div>
+          <div class="bank-name">${c.nombre}</div>
+          <div class="bank-type">${tipoCuentaLabel(c.nombre)}</div>
+        </div>
       </div>
-      <div class="li-actions"><button onclick="editarCuenta('${c.id}')">Editar</button><button onclick="borrarCuenta('${c.id}')">Eliminar</button></div>
-    </div>
-  `).join('') : `<div class="empty-state">Aún no tienes cuentas registradas.</div>`;
+      <div class="bank-balance mono">${fmt(saldo)}</div>
+      <div class="bank-currency">${c.moneda}</div>
+      <div class="bank-share">Representa el <b>${share.toFixed(1)}%</b> de tu patrimonio</div>
+      <div class="bank-updated">Última actualización: hoy</div>
+      <div class="bank-actions">
+        <button onclick="editarCuenta('${c.id}')">Editar</button>
+        <button onclick="borrarCuenta('${c.id}')">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 window.abrirModalCuenta = function(){
   document.getElementById('cuenta-modal-title').textContent = 'Nueva cuenta';
