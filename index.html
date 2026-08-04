@@ -361,6 +361,75 @@
     .mov-filtros-bar .filter, .mov-search{flex:1 1 100%;}
   }
 
+  /* ---------- CATEGORIAS PREMIUM ---------- */
+  .cat-header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:26px;flex-wrap:wrap;}
+  .cat-header-row .page-title{margin-bottom:6px;}
+  .cat-header-row .page-sub{margin-bottom:0;}
+
+  .cat-stats-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+  .mini-kpi.neutral .mini-kpi-icon{background:var(--surface-2);color:var(--text);}
+  .mini-kpi.neutral .mini-kpi-value{color:var(--text);}
+
+  .cat-search-bar{
+    display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+    border-radius:11px;padding:11px 16px;margin-bottom:26px;max-width:360px;
+    transition:border-color .15s ease;
+  }
+  .cat-search-bar:focus-within{border-color:var(--accent);}
+  .cat-search-bar svg{width:16px;height:16px;color:var(--muted);flex-shrink:0;}
+  .cat-search-bar input{border:none;background:none;color:var(--text);font-size:13.5px;width:100%;outline:none;}
+
+  .cat-group{margin-bottom:30px;}
+  .cat-group-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .cat-group-head .cat-group-title{font-size:13px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:.06em;}
+  .cat-group-head .cat-group-count{font-size:11.5px;color:var(--muted-2);background:var(--surface-2);border-radius:20px;padding:2px 9px;}
+
+  .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media (max-width:1100px){ .cat-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:640px){ .cat-grid{grid-template-columns:1fr;} }
+
+  .cat-card{
+    position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;
+    padding:20px;overflow:hidden;box-shadow:var(--shadow);
+    opacity:0;transform:translateY(12px);animation:cardIn .35s cubic-bezier(.2,.8,.3,1) forwards;
+    transition:transform .25s cubic-bezier(.2,.8,.3,1), box-shadow .25s ease, border-color .25s ease;
+  }
+  .cat-card:hover{transform:translateY(-3px);box-shadow:0 4px 10px rgba(0,0,0,.3),0 18px 34px rgba(0,0,0,.32);border-color:var(--accent);}
+  .cat-card .cat-band{position:absolute;top:0;left:0;right:0;height:4px;}
+  .cat-card .cat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .cat-card .cat-icon-badge{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;}
+  .cat-card .cat-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s ease;}
+  .cat-card:hover .cat-actions{opacity:1;}
+  .cat-card .cat-actions button{background:none;border:none;font-size:14px;padding:5px 7px;border-radius:6px;color:var(--muted);}
+  .cat-card .cat-actions button:hover{background:var(--surface-2);color:var(--text);}
+  .cat-card .cat-name{font-size:15.5px;font-weight:600;color:var(--text);margin-bottom:8px;}
+  .cat-card .cat-badge{
+    display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+    padding:3px 10px;border-radius:20px;margin-bottom:10px;
+  }
+  .cat-card .cat-badge.ingreso{background:var(--green-soft);color:var(--green);}
+  .cat-card .cat-badge.gasto{background:var(--rust-soft);color:var(--rust);}
+  .cat-card .cat-count{font-size:12px;color:var(--muted-2);}
+
+  .cat-empty{
+    grid-column:1/-1;text-align:center;padding:64px 24px;background:var(--surface);
+    border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);
+  }
+  .cat-empty .icon-big{font-size:40px;margin-bottom:14px;}
+  .cat-empty .display{font-size:22px;color:var(--text);margin-bottom:6px;}
+  .cat-empty p{color:var(--muted);font-size:13.5px;margin:0 0 22px;}
+
+  .modal-cat .modal-header{margin-bottom:22px;}
+  .modal-cat .modal-header h3{margin:0 0 4px;}
+  .modal-cat .modal-subtitle{font-size:12.5px;color:var(--muted);margin:0;}
+  .modal-cat .modal-footer{border-top:1px solid var(--border-soft);padding-top:18px;margin-top:22px;justify-content:flex-end;}
+
+  @media (max-width:820px){
+    .cat-header-row{flex-direction:column;}
+    .cat-card .cat-actions{opacity:1;}
+    .cat-search-bar{max-width:none;}
+  }
+
   /* ---------- FORMS / LISTS ---------- */
 
 
@@ -562,10 +631,22 @@
 
       <!-- CATEGORIAS -->
       <section id="view-categorias" style="display:none;">
-        <h2 class="page-title">Categorías</h2>
-        <p class="page-sub">Clasifica tus movimientos. Las palabras clave ayudan al bot de Telegram a reconocerlas.</p>
-        <div class="toolbar"><span></span><button class="btn-add" onclick="abrirModalCategoria()">+ Nueva categoría</button></div>
-        <div class="section-block" id="categorias-list"></div>
+        <div class="cat-header-row">
+          <div>
+            <h2 class="page-title">Categorías</h2>
+            <p class="page-sub">Clasifica tus movimientos. Las palabras clave ayudan al bot de Telegram a reconocerlas.</p>
+          </div>
+          <button class="btn-add btn-add-icon" onclick="abrirModalCategoria()"><span class="btn-add-plus">+</span> Nueva categoría</button>
+        </div>
+
+        <div class="cat-stats-row" id="cat-stats"></div>
+
+        <div class="cat-search-bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          <input type="text" id="filtro-categoria-busqueda" placeholder="Buscar categoría..." oninput="renderCategoriasList()">
+        </div>
+
+        <div id="categorias-list"></div>
       </section>
 
       <!-- CONFIG -->
@@ -642,21 +723,24 @@
 
 <!-- ============ MODAL CATEGORIA ============ -->
 <div class="modal-bg" id="modal-categoria">
-  <div class="modal">
-    <h3 id="cat-modal-title">Nueva categoría</h3>
+  <div class="modal modal-cat">
+    <div class="modal-header">
+      <h3 id="cat-modal-title">Nueva categoría</h3>
+      <p class="modal-subtitle">Define cómo se verá y cómo la reconocerá el bot.</p>
+    </div>
     <input type="hidden" id="cat-id">
-    <div class="field"><label>Nombre</label><input type="text" id="cat-nombre"></div>
-    <div class="toggle-tipo" style="margin-bottom:14px;">
+    <div class="field"><label>Nombre</label><input type="text" id="cat-nombre" placeholder="Ej: Alimentación"></div>
+    <div class="toggle-tipo" style="margin-bottom:16px;">
       <button type="button" id="btn-cat-tipo-ingreso" onclick="setTipoCategoria('ingreso')">Ingreso</button>
       <button type="button" id="btn-cat-tipo-gasto" onclick="setTipoCategoria('gasto')">Gasto</button>
     </div>
     <div class="field-row">
-      <div class="field"><label>Ícono</label><input type="text" id="cat-icono" placeholder="🏷️" maxlength="2"></div>
+      <div class="field" style="max-width:110px;"><label>Ícono</label><input type="text" id="cat-icono" placeholder="🏷️" maxlength="2"></div>
       <div class="field"><label>Palabras clave (separadas por coma)</label><input type="text" id="cat-keywords" placeholder="comida, almuerzo"></div>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions modal-footer">
       <button class="btn-secondary" onclick="cerrarModal('modal-categoria')">Cancelar</button>
-      <button class="btn-primary" onclick="guardarCategoria()">Guardar</button>
+      <button class="btn-primary" style="width:auto;padding:12px 26px;" onclick="guardarCategoria()">Guardar</button>
     </div>
   </div>
 </div>
@@ -1081,15 +1165,74 @@ window.borrarCuenta = async function(id){
 };
 
 // ---------------- CATEGORIAS ----------------
+const CAT_COLORS = [
+  '#E8A05C','#6E9FD8','#6FBF8B','#5FC4C9','#A488D9','#E28B8B','#D9C15C','#8FB6D9','#C98BC2','#7FBF9E'
+];
+function colorCategoria(nombre){
+  let hash = 0;
+  for(let i=0;i<(nombre||'').length;i++) hash = nombre.charCodeAt(i) + ((hash<<5)-hash);
+  return CAT_COLORS[Math.abs(hash) % CAT_COLORS.length];
+}
 function renderCategoriasList(){
-  document.getElementById('categorias-list').innerHTML = categorias.length ? categorias.map(c=>`
-    <div class="list-item">
-      <div class="li-info"><span style="font-size:18px;">${c.icono}</span>
-        <div><div>${c.nombre}</div><div class="meta" style="font-size:12px;color:var(--muted);">${c.tipo==='ingreso'?'Ingreso':'Gasto'}${c.palabras_clave&&c.palabras_clave.length?' · '+c.palabras_clave.join(', '):''}</div></div>
-      </div>
-      <div class="li-actions"><button onclick="editarCategoria('${c.id}')">Editar</button><button onclick="borrarCategoria('${c.id}')">Eliminar</button></div>
-    </div>
-  `).join('') : `<div class="empty-state">Aún no tienes categorías.</div>`;
+  const busqueda = (document.getElementById('filtro-categoria-busqueda')?.value || '').toLowerCase();
+  const cats = categorias.filter(c => c.nombre.toLowerCase().includes(busqueda));
+
+  const statsEl = document.getElementById('cat-stats');
+  if(statsEl){
+    const totalIng = categorias.filter(c=>c.tipo==='ingreso').length;
+    const totalGas = categorias.filter(c=>c.tipo==='gasto').length;
+    statsEl.innerHTML = `
+      <div class="mini-kpi neutral"><div class="mini-kpi-top"><span class="mini-kpi-icon">🏷️</span><span class="mini-kpi-label">Total categorías</span></div><div class="mini-kpi-value mono">${categorias.length}</div></div>
+      <div class="mini-kpi ingreso"><div class="mini-kpi-top"><span class="mini-kpi-icon">↑</span><span class="mini-kpi-label">De ingreso</span></div><div class="mini-kpi-value mono">${totalIng}</div></div>
+      <div class="mini-kpi gasto"><div class="mini-kpi-top"><span class="mini-kpi-icon">↓</span><span class="mini-kpi-label">De gasto</span></div><div class="mini-kpi-value mono">${totalGas}</div></div>
+    `;
+  }
+
+  const cont = document.getElementById('categorias-list');
+  if(!categorias.length){
+    cont.innerHTML = `
+      <div class="cat-empty">
+        <div class="icon-big">🏷️</div>
+        <div class="display">No tienes categorías</div>
+        <p>Empieza creando tu primera categoría para organizar mejor tus finanzas.</p>
+        <button class="btn-add btn-add-icon" onclick="abrirModalCategoria()"><span class="btn-add-plus">+</span> Nueva categoría</button>
+      </div>`;
+    return;
+  }
+  if(!cats.length){
+    cont.innerHTML = `<div class="cat-empty"><div class="icon-big">🔍</div><div class="display">Sin resultados</div><p>No hay categorías que coincidan con tu búsqueda.</p></div>`;
+    return;
+  }
+
+  const grupos = [['ingreso','INGRESOS'], ['gasto','GASTOS']];
+  let idx = 0;
+  cont.innerHTML = grupos.map(([tipo,label])=>{
+    const items = cats.filter(c=>c.tipo===tipo);
+    if(!items.length) return '';
+    const cards = items.map(c=>{
+      const color = colorCategoria(c.nombre);
+      const nMovs = movimientos.filter(m=>m.categoria_id===c.id).length;
+      const delay = (idx++)*45;
+      return `
+      <div class="cat-card" style="animation-delay:${delay}ms">
+        <div class="cat-band" style="background:${color}"></div>
+        <div class="cat-top">
+          <span class="cat-icon-badge" style="background:${color}22;color:${color};">${c.icono}</span>
+          <div class="cat-actions">
+            <button onclick="editarCategoria('${c.id}')" title="Editar">✏️</button>
+            <button onclick="borrarCategoria('${c.id}')" title="Eliminar">🗑️</button>
+          </div>
+        </div>
+        <div class="cat-name">${c.nombre}</div>
+        <span class="cat-badge ${c.tipo}">${c.tipo==='ingreso'?'Ingreso':'Gasto'}</span>
+        <div class="cat-count">${nMovs} movimiento${nMovs===1?'':'s'}</div>
+      </div>`;
+    }).join('');
+    return `<div class="cat-group">
+      <div class="cat-group-head"><span class="cat-group-title">${label}</span><span class="cat-group-count">${items.length}</span></div>
+      <div class="cat-grid">${cards}</div>
+    </div>`;
+  }).join('');
 }
 window.setTipoCategoria = function(t){
   tipoCategoriaActual = t;
