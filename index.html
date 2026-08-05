@@ -441,7 +441,39 @@
     .cat-search-bar{max-width:none;}
   }
 
+  /* ---------- CONFIGURACION PREMIUM ---------- */
+  .cfg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-bottom:28px;}
+  @media (max-width:900px){ .cfg-grid{grid-template-columns:1fr;} }
+  .cfg-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;
+    box-shadow:var(--shadow);opacity:0;transform:translateY(12px);animation:cardIn .35s cubic-bezier(.2,.8,.3,1) forwards;
+    transition:transform .25s cubic-bezier(.2,.8,.3,1), box-shadow .25s ease, border-color .25s ease;
+  }
+  .cfg-card:hover{transform:translateY(-3px);box-shadow:0 4px 10px rgba(0,0,0,.3),0 18px 34px rgba(0,0,0,.32);border-color:var(--accent);}
+  .cfg-card-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px;}
+  .cfg-icon{width:42px;height:42px;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .cfg-card-head h3{margin:0 0 4px;font-size:15.5px;color:var(--text);}
+  .cfg-card-head p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .cfg-card-body .field{margin-bottom:16px;}
+  .cfg-card-body .field:last-child{margin-bottom:0;}
+  .cfg-hint{font-size:13px;color:var(--muted);margin:0 0 4px;line-height:1.5;}
+  .cfg-save-row{display:flex;justify-content:flex-end;}
+
+  .switch{position:relative;display:inline-block;width:44px;height:26px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .slider{
+    position:absolute;inset:0;background:var(--surface-3);border:1px solid var(--border);
+    border-radius:14px;transition:background .2s ease;cursor:pointer;
+  }
+  .switch .slider::before{
+    content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;
+    transition:transform .2s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px rgba(0,0,0,.4);
+  }
+  .switch input:checked + .slider{background:var(--accent);border-color:var(--accent);}
+  .switch input:checked + .slider::before{transform:translateX(18px);}
+
   /* ---------- FORMS / LISTS ---------- */
+
 
 
   .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
@@ -663,23 +695,43 @@
       <!-- CONFIG -->
       <section id="view-config" style="display:none;">
         <h2 class="page-title">Configuración</h2>
-        <p class="page-sub">Moneda base y tasas de cambio para el total consolidado.</p>
-        <div class="section-block">
-          <h3>Moneda base</h3>
-          <select class="filter" id="cfg-moneda-base" style="width:140px;"></select>
+        <p class="page-sub">Ajusta la aplicación según tus preferencias.</p>
+
+        <div class="cfg-grid">
+          <div class="cfg-card">
+            <div class="cfg-card-head">
+              <span class="cfg-icon">💰</span>
+              <div>
+                <h3>Finanzas</h3>
+                <p>Moneda base y tasas de cambio usadas para tu balance consolidado.</p>
+              </div>
+            </div>
+            <div class="cfg-card-body">
+              <div class="field"><label>Moneda base</label><select id="cfg-moneda-base" style="max-width:160px;"></select></div>
+              <div class="field"><label>Tasas de cambio (1 unidad = ? moneda base)</label>
+                <div id="cfg-tasas"></div>
+                <button class="btn-secondary" style="margin-top:6px;" onclick="agregarFilaTasa()">+ Agregar moneda</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cfg-card">
+            <div class="cfg-card-head">
+              <span class="cfg-icon">🔗</span>
+              <div>
+                <h3>Telegram</h3>
+                <p>Registra movimientos por chat vinculando tu cuenta al bot.</p>
+              </div>
+            </div>
+            <div class="cfg-card-body">
+              <p class="cfg-hint">Envía este código a tu bot con el comando <span class="mono">/vincular CODIGO</span>.</p>
+              <div class="config-code" id="telegram-code">— generando —</div>
+              <button class="btn-secondary" onclick="regenerarCodigoTelegram()">Generar nuevo código</button>
+            </div>
+          </div>
         </div>
-        <div class="section-block">
-          <h3>Tasas de cambio (1 unidad = ? moneda base)</h3>
-          <div id="cfg-tasas"></div>
-          <button class="btn-secondary" style="margin-top:10px;" onclick="agregarFilaTasa()">+ Agregar moneda</button>
-        </div>
-        <div class="section-block">
-          <h3>Vincular Telegram</h3>
-          <p style="font-size:13px;color:var(--muted);margin-top:0;">Envía este código a tu bot de Telegram con el comando <span class="mono">/vincular CODIGO</span> para poder registrar movimientos por chat.</p>
-          <div class="config-code" id="telegram-code">— generando —</div>
-          <button class="btn-secondary" onclick="regenerarCodigoTelegram()">Generar nuevo código</button>
-        </div>
-        <div style="text-align:right;"><button class="btn-primary" style="width:auto;padding:10px 22px;" onclick="guardarConfig()">Guardar configuración</button></div>
+
+        <div class="cfg-save-row"><button class="btn-primary" style="width:auto;padding:12px 26px;" onclick="guardarConfig()">Guardar configuración</button></div>
       </section>
     </main>
   </div>
