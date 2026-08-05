@@ -472,7 +472,40 @@
   .switch input:checked + .slider{background:var(--accent);border-color:var(--accent);}
   .switch input:checked + .slider::before{transform:translateX(18px);}
 
+  /* ---------- PERFIL SIDEBAR ---------- */
+  .sidebar-top{padding:0 16px;margin-bottom:6px;}
+  .sidebar-top .brand{padding:0 10px 18px;}
+  .profile-card{
+    display:flex;align-items:center;gap:11px;padding:12px;border-radius:12px;
+    background:var(--surface-2);border:1px solid var(--border-soft);margin-bottom:12px;
+  }
+  .avatar-wrap{position:relative;flex-shrink:0;}
+  .avatar{
+    width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:600;color:#0F1417;
+    background:linear-gradient(135deg,var(--accent),var(--gold));
+  }
+  .avatar-sm{width:30px;height:30px;font-size:11px;}
+  .status-online{
+    position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;
+    background:var(--green);border:2px solid var(--surface-2);
+  }
+  .profile-info{min-width:0;}
+  .profile-greeting{font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .profile-email{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .patrimonio-mini{
+    background:var(--surface-2);border:1px solid var(--border-soft);border-radius:12px;
+    padding:12px 14px;margin-bottom:14px;
+  }
+  .patrimonio-mini-label{font-size:11.5px;color:var(--muted);margin-bottom:4px;}
+  .patrimonio-mini-value{font-size:16px;font-weight:600;}
+  .patrimonio-mini-value.up{color:var(--green);}
+  .patrimonio-mini-value.down{color:var(--rust);}
+  .patrimonio-mini-sub{font-size:10.5px;color:var(--muted-2);margin-top:2px;}
+  .nav-item.logout{display:flex;align-items:center;gap:10px;}
+
   /* ---------- FORMS / LISTS ---------- */
+
 
 
 
@@ -539,7 +572,7 @@
       width:100%;flex-direction:row;padding:0;position:fixed;bottom:0;left:0;right:0;
       z-index:40;justify-content:space-around;border-top:1px solid var(--border);border-right:none;
     }
-    nav.sidebar .brand,.nav-spacer,.nav-item.logout{display:none;}
+    nav.sidebar .sidebar-top,.nav-spacer,.nav-item.logout{display:none;}
     .nav-items-wrap{display:flex;width:100%;position:relative;}
     .nav-indicator{top:6px;bottom:6px;height:auto;left:0;right:0;}
     .nav-item{
@@ -573,7 +606,20 @@
 <div id="app-view">
   <div class="shell">
     <nav class="sidebar">
-      <div class="brand">Balance<span>·</span></div>
+      <div class="sidebar-top">
+        <div class="brand">Balance<span>·</span></div>
+        <div class="profile-card">
+          <div class="avatar-wrap">
+            <div class="avatar" id="user-avatar">··</div>
+            <span class="status-online" title="En línea"></span>
+          </div>
+          <div class="profile-info">
+            <div class="profile-greeting" id="profile-greeting">Hola</div>
+            <div class="profile-email" id="profile-email"></div>
+          </div>
+        </div>
+        <div class="patrimonio-mini" id="patrimonio-mini"></div>
+      </div>
       <div class="nav-items-wrap">
         <div class="nav-indicator" id="nav-indicator"></div>
         <div class="nav-item active" data-view="dashboard" onclick="mostrarVista('dashboard')">
@@ -598,11 +644,14 @@
         </div>
       </div>
       <div class="nav-spacer"></div>
-      <div class="nav-item logout" onclick="cerrarSesion()">↩ Salir</div>
+      <div class="nav-item logout" onclick="cerrarSesion()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:15px;height:15px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Salir</div>
     </nav>
 
     <main class="content">
-      <div class="mobile-topbar"><div class="brand">Balance<span>.</span></div></div>
+      <div class="mobile-topbar">
+        <div class="brand">Balance<span>.</span></div>
+        <div class="avatar avatar-sm" id="user-avatar-mobile">··</div>
+      </div>
 
       <!-- DASHBOARD -->
       <section id="view-dashboard">
@@ -898,8 +947,43 @@ async function cargarTodo(){
   renderTodo();
 }
 function renderTodo(){
+  renderPerfilSidebar();
   renderDashboard(); renderFiltroCuentas(); poblarFiltroMes(); renderMovimientos();
   renderCuentasList(); renderCategoriasList(); renderConfig();
+}
+function saludoHora(){
+  const h = new Date().getHours();
+  if(h<12) return ['Buenos días','☀️'];
+  if(h<19) return ['Buenas tardes','🌤️'];
+  return ['Buenas noches','🌙'];
+}
+function inicialesEmail(email){
+  if(!email) return '··';
+  const nombre = email.split('@')[0];
+  const partes = nombre.split(/[._-]/).filter(Boolean);
+  const ini = (partes[0]?.[0]||'') + (partes[1]?.[0]||partes[0]?.[1]||'');
+  return ini.toUpperCase();
+}
+function renderPerfilSidebar(){
+  const email = session?.user?.email || '';
+  const [saludo, emoji] = saludoHora();
+  const iniciales = inicialesEmail(email);
+  document.getElementById('user-avatar').textContent = iniciales;
+  const avatarMobile = document.getElementById('user-avatar-mobile');
+  if(avatarMobile) avatarMobile.textContent = iniciales;
+  document.getElementById('profile-greeting').textContent = `${saludo} ${emoji}`;
+  document.getElementById('profile-email').textContent = email;
+
+  const movsMes = movimientos.filter(m=>esteMes(m.fecha));
+  const ing = movsMes.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
+  const gas = movsMes.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
+  const delta = ing - gas;
+  const sube = delta >= 0;
+  document.getElementById('patrimonio-mini').innerHTML = `
+    <div class="patrimonio-mini-label">${sube?'Tu patrimonio aumentó':'Tu patrimonio disminuyó'}</div>
+    <div class="patrimonio-mini-value ${sube?'up':'down'} mono">${sube?'+':'-'}${config.moneda_base} ${fmt(Math.abs(delta))}</div>
+    <div class="patrimonio-mini-sub">este mes</div>
+  `;
 }
 
 // ---------------- NAVEGACION ----------------
