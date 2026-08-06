@@ -179,6 +179,18 @@
   .dash-section-title{font-size:15px;font-weight:600;color:var(--text);margin:8px 0 16px;}
 
   .dash-header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:28px;}
+  .gh-breadcrumbs{font-size:11.5px;color:var(--muted-2);margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+  .gh-breadcrumbs .gh-bc-sep{opacity:.5;}
+  .gh-breadcrumbs .gh-bc-current{color:var(--muted);}
+  .gh-greeting{font-size:12.5px;color:var(--accent);font-weight:500;margin-bottom:5px;}
+  @media (max-width:1000px){
+    .dash-header-row{flex-direction:column;}
+    .dash-header-actions{width:100%;}
+  }
+  @media (max-width:640px){
+    .dash-header-actions{flex-direction:column;align-items:stretch;}
+    .dash-search-bar input{width:100%;}
+  }
   .dash-header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .dash-search-bar{
     display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);
@@ -710,20 +722,7 @@
 
       <!-- DASHBOARD -->
       <section id="view-dashboard">
-        <div class="dash-header-row">
-          <div>
-            <h2 class="page-title">Dashboard</h2>
-            <p class="page-sub" id="dash-mes-label">Resumen del mes</p>
-          </div>
-          <div class="dash-header-actions">
-            <div class="dash-search-bar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-              <input type="text" placeholder="Buscar...">
-            </div>
-            <div class="dash-period-pill" id="dash-period-pill">— ▾</div>
-            <button class="btn-add btn-add-icon" onclick="abrirModalMovimiento()"><span class="btn-add-plus">+</span> Nuevo movimiento</button>
-          </div>
-        </div>
+        <div id="gh-dashboard"></div>
 
         <div class="dash-stats-grid">
           <div class="hero-balance">
@@ -784,8 +783,7 @@
 
       <!-- MOVIMIENTOS -->
       <section id="view-movimientos" style="display:none;">
-        <h2 class="page-title">Movimientos</h2>
-        <p class="page-sub">Todos tus ingresos y gastos registrados.</p>
+        <div id="gh-movimientos"></div>
 
         <div class="mov-stats-row" id="mov-stats"></div>
 
@@ -797,8 +795,6 @@
             <option value="gasto">Gastos</option>
           </select>
           <select class="filter" id="filtro-mes" onchange="renderMovimientos()"></select>
-          <input type="text" class="mov-search" id="filtro-busqueda" placeholder="Buscar..." oninput="renderMovimientos()">
-          <button class="btn-add btn-add-icon mov-add-desktop" onclick="abrirModalMovimiento()"><span class="btn-add-plus">+</span> Nuevo movimiento</button>
         </div>
 
         <div id="movimientos-list"></div>
@@ -807,36 +803,22 @@
 
       <!-- CUENTAS -->
       <section id="view-cuentas" style="display:none;">
-        <h2 class="page-title">Cuentas</h2>
-        <p class="page-sub">Bancos, efectivo y billeteras — cada una con su propia moneda.</p>
-        <div class="toolbar"><span></span><button class="btn-add btn-add-icon" onclick="abrirModalCuenta()"><span class="btn-add-plus">+</span> Nueva cuenta</button></div>
+        <div id="gh-cuentas"></div>
         <div class="cuentas-grid" id="cuentas-list"></div>
       </section>
 
       <!-- CATEGORIAS -->
       <section id="view-categorias" style="display:none;">
-        <div class="cat-header-row">
-          <div>
-            <h2 class="page-title">Categorías</h2>
-            <p class="page-sub">Clasifica tus movimientos. Las palabras clave ayudan al bot de Telegram a reconocerlas.</p>
-          </div>
-          <button class="btn-add btn-add-icon" onclick="abrirModalCategoria()"><span class="btn-add-plus">+</span> Nueva categoría</button>
-        </div>
+        <div id="gh-categorias"></div>
 
         <div class="cat-stats-row" id="cat-stats"></div>
-
-        <div class="cat-search-bar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-          <input type="text" id="filtro-categoria-busqueda" placeholder="Buscar categoría..." oninput="renderCategoriasList()">
-        </div>
 
         <div id="categorias-list"></div>
       </section>
 
       <!-- CONFIG -->
       <section id="view-config" style="display:none;">
-        <h2 class="page-title">Configuración</h2>
-        <p class="page-sub">Ajusta la aplicación según tus preferencias.</p>
+        <div id="gh-config"></div>
 
         <div class="cfg-grid">
           <div class="cfg-card">
@@ -1039,9 +1021,68 @@ async function cargarTodo(){
   renderTodo();
 }
 function renderTodo(){
+  renderHeaders();
   renderPerfilSidebar();
   renderDashboard(); renderFiltroCuentas(); poblarFiltroMes(); renderMovimientos();
   renderCuentasList(); renderCategoriasList(); renderConfig();
+}
+
+// ---------------- HEADER GLOBAL REUTILIZABLE ----------------
+function greetingText(){
+  const [saludo, emoji] = saludoHora();
+  const email = session?.user?.email || '';
+  const nombre = (email.split('@')[0]||'').split(/[._-]/)[0];
+  const nombreCap = nombre ? nombre.charAt(0).toUpperCase()+nombre.slice(1) : '';
+  return `${saludo}${nombreCap?', '+nombreCap:''} ${emoji}`;
+}
+function renderGlobalHeader(containerId, opts){
+  const el = document.getElementById(containerId); if(!el) return;
+  const bc = (opts.breadcrumbs||[]).map((b,i,arr)=> i<arr.length-1
+    ? `<span>${b}</span><span class="gh-bc-sep">›</span>`
+    : `<span class="gh-bc-current">${b}</span>`).join('');
+  const greetingHtml = opts.showGreeting ? `<div class="gh-greeting">${greetingText()}</div>` : '';
+  const searchHtml = opts.searchPlaceholder ? `
+    <div class="dash-search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      <input type="text" ${opts.searchInputId?`id="${opts.searchInputId}"`:''} placeholder="${opts.searchPlaceholder}" ${opts.searchOninput?`oninput="${opts.searchOninput}"`:''}>
+    </div>` : '';
+  const periodHtml = opts.showDateFilter ? `<div class="dash-period-pill">${opts.periodText||'—'} ▾</div>` : '';
+  const btnHtml = opts.actionButton ? `<button class="btn-add btn-add-icon" onclick="${opts.actionButton.onclick}"><span class="btn-add-plus">+</span> ${opts.actionButton.label}</button>` : '';
+  el.innerHTML = `
+    <div class="dash-header-row">
+      <div>
+        <div class="gh-breadcrumbs">${bc}</div>
+        ${greetingHtml}
+        <h2 class="page-title">${opts.title}</h2>
+        <p class="page-sub">${opts.subtitle||''}</p>
+      </div>
+      <div class="dash-header-actions">${searchHtml}${periodHtml}${btnHtml}</div>
+    </div>`;
+}
+function renderHeaders(){
+  const mesLabel = new Date().toLocaleDateString('es-PE',{month:'long', year:'numeric'});
+  renderGlobalHeader('gh-dashboard', {
+    breadcrumbs:['Inicio','Dashboard'], title:'Dashboard', subtitle:'Resumen de '+mesLabel,
+    showGreeting:true, searchPlaceholder:'Buscar movimientos...', showDateFilter:true, periodText:mesLabel,
+    actionButton:{label:'Nuevo movimiento', onclick:'abrirModalMovimiento()'}
+  });
+  renderGlobalHeader('gh-movimientos', {
+    breadcrumbs:['Inicio','Movimientos'], title:'Movimientos', subtitle:'Todos tus ingresos y gastos registrados.',
+    searchPlaceholder:'Buscar movimientos...', searchInputId:'filtro-busqueda', searchOninput:'renderMovimientos()',
+    actionButton:{label:'Registrar movimiento', onclick:'abrirModalMovimiento()'}
+  });
+  renderGlobalHeader('gh-cuentas', {
+    breadcrumbs:['Inicio','Finanzas','Cuentas'], title:'Cuentas', subtitle:'Bancos, efectivo y billeteras — cada una con su propia moneda.',
+    searchPlaceholder:'Buscar cuentas...', actionButton:{label:'Nueva cuenta', onclick:'abrirModalCuenta()'}
+  });
+  renderGlobalHeader('gh-categorias', {
+    breadcrumbs:['Inicio','Categorías'], title:'Categorías', subtitle:'Clasifica tus movimientos. Las palabras clave ayudan al bot de Telegram a reconocerlas.',
+    searchPlaceholder:'Buscar categorías...', searchInputId:'filtro-categoria-busqueda', searchOninput:'renderCategoriasList()',
+    actionButton:{label:'Nueva categoría', onclick:'abrirModalCategoria()'}
+  });
+  renderGlobalHeader('gh-config', {
+    breadcrumbs:['Inicio','Configuración'], title:'Configuración', subtitle:'Ajusta la aplicación según tus preferencias.'
+  });
 }
 function saludoHora(){
   const h = new Date().getHours();
@@ -1112,11 +1153,6 @@ function esteMes(fecha){
 // ---------------- DASHBOARD ----------------
 function renderDashboard(){
   const now = new Date();
-  document.getElementById('dash-mes-label').textContent =
-    'Resumen de ' + now.toLocaleDateString('es-PE',{month:'long', year:'numeric'});
-  document.getElementById('dash-period-pill').textContent =
-    now.toLocaleDateString('es-PE',{month:'long', year:'numeric'}) + ' ▾';
-
   const movsMes = movimientos.filter(m=>esteMes(m.fecha));
   const ingresoMes = movsMes.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
   const gastoMes = movsMes.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
