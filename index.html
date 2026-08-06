@@ -279,6 +279,25 @@
   .dash-bottom-row{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-bottom:24px;}
   @media (max-width:900px){ .dash-bottom-row{grid-template-columns:1fr;} }
 
+  .insights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px;}
+  .insight-card{
+    background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:14px;padding:16px 18px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow);
+    opacity:0;transform:translateY(10px);animation:cardIn .35s cubic-bezier(.2,.8,.3,1) forwards;
+    transition:transform .22s ease, box-shadow .22s ease;
+  }
+  .insight-card:hover{transform:translateY(-3px);box-shadow:0 4px 10px rgba(0,0,0,.3),0 16px 30px rgba(0,0,0,.3);}
+  .insight-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .insight-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
+  .insight-desc{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .insights-empty{
+    grid-column:1/-1;text-align:center;padding:44px 24px;background:var(--surface);
+    border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);
+  }
+  .insights-empty .icon-big{font-size:32px;}
+  .insights-empty .display{font-size:17px;color:var(--text);margin:10px 0 6px;}
+  .insights-empty p{color:var(--muted);font-size:12.5px;margin:0;max-width:360px;margin-inline:auto;}
+
   .donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
   .donut-svg{width:128px;height:128px;flex-shrink:0;}
   .donut-legend{flex:1;min-width:160px;display:flex;flex-direction:column;gap:10px;}
@@ -775,6 +794,9 @@
           </div>
         </div>
 
+        <div class="dash-section-title">Insights</div>
+        <div class="insights-grid" id="insights-grid"></div>
+
         <div class="section-block">
           <h3>Movimientos recientes</h3>
           <div id="recent-ledger"></div>
@@ -1213,6 +1235,7 @@ function renderDashboard(){
   renderChartPrincipal();
   renderChartPatrimonio();
   renderDonutGastos();
+  renderInsights();
 
   const recientes = movimientos.slice(0,8);
   document.getElementById('recent-ledger').innerHTML = recientes.length ? recientes.map(m=>ledgerRowHtml(m)).join('') :
@@ -1351,6 +1374,91 @@ function renderDonutGastos(){
     </div>
   </div>`;
 }
+
+// ---------------- INSIGHTS (componente reutilizable) ----------------
+const INSIGHT_STYLES = {
+  info:{bg:'var(--accent-soft)', color:'var(--accent)'},
+  exito:{bg:'var(--green-soft)', color:'var(--green)'},
+  advertencia:{bg:'var(--rust-soft)', color:'var(--rust)'},
+  consejo:{bg:'rgba(232,196,104,.14)', color:'var(--gold)'}
+};
+function insightCardHtml(insight, idx){
+  const s = INSIGHT_STYLES[insight.type] || INSIGHT_STYLES.info;
+  return `<div class="insight-card" style="border-left-color:${s.color};animation-delay:${idx*50}ms">
+    <span class="insight-icon" style="background:${s.bg};color:${s.color}">${insight.icon}</span>
+    <div>
+      <div class="insight-title">${insight.title}</div>
+      <div class="insight-desc">${insight.description}</div>
+    </div>
+  </div>`;
+}
+function generarInsights(){
+  const insights = [];
+  if(movimientos.length < 3) return insights;
+
+  const now = new Date();
+  const movsMes = movimientos.filter(m=>esteMes(m.fecha));
+  const ingresoMes = movsMes.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
+  const gastoMes = movsMes.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
+  const ahorroMes = ingresoMes - gastoMes;
+
+  const mesAntYm = (()=>{ const d=new Date(now.getFullYear(),now.getMonth()-1,1); return d.toISOString().slice(0,7); })();
+  const movsMesAnt = movimientos.filter(m=>m.fecha.slice(0,7)===mesAntYm);
+  const ingresoAnt = movsMesAnt.filter(m=>m.tipo==='ingreso').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
+  const gastoAnt = movsMesAnt.filter(m=>m.tipo==='gasto').reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
+  const ahorroAnt = ingresoAnt - gastoAnt;
+
+  if(gastoAnt>0 && gastoMes < gastoAnt){
+    const pct = ((gastoAnt-gastoMes)/gastoAnt*100).toFixed(0);
+    insights.push({type:'exito', icon:'📉', title:'Gastaste menos este mes', description:`Tus gastos bajaron ${pct}% respecto al mes anterior.`});
+  } else if(gastoAnt>0 && gastoMes > gastoAnt){
+    const pct = ((gastoMes-gastoAnt)/gastoAnt*100).toFixed(0);
+    insights.push({type:'advertencia', icon:'📈', title:'Gastaste más que el mes anterior', description:`Tus gastos subieron ${pct}% respecto al mes anterior.`});
+  }
+
+  if(gastoAnt>0 && ahorroMes > ahorroAnt){
+    insights.push({type:'exito', icon:'💰', title:'Tu ahorro aumentó', description:`Ahorraste ${fmt(Math.abs(ahorroMes-ahorroAnt))} ${config.moneda_base} más que el mes pasado.`});
+  }
+
+  const porCat = {};
+  movsMes.filter(m=>m.tipo==='gasto').forEach(m=>{
+    const cat = categorias.find(c=>c.id===m.categoria_id);
+    const nombre = cat ? cat.nombre : 'Sin categoría';
+    porCat[nombre] = (porCat[nombre]||0) + aMonedaBase(m.monto,m.moneda);
+  });
+  const totalGastoCat = Object.values(porCat).reduce((a,b)=>a+b,0);
+  if(totalGastoCat>0){
+    const [nombreTop, montoTop] = Object.entries(porCat).sort((a,b)=>b[1]-a[1])[0];
+    const pctTop = montoTop/totalGastoCat*100;
+    if(pctTop>=30){
+      insights.push({type:'info', icon:'🏷️', title:`${nombreTop} domina tus gastos`, description:`La categoría ${nombreTop} representa el ${pctTop.toFixed(0)}% de tus gastos de este mes.`});
+    }
+  }
+
+  if(ingresoMes===0){
+    insights.push({type:'advertencia', icon:'💸', title:'Sin ingresos registrados', description:'Todavía no registraste ingresos este mes.'});
+  }
+
+  const hoyStr = now.toISOString().slice(0,10);
+  const huboHoy = movimientos.some(m=>m.fecha===hoyStr);
+  if(!huboHoy){
+    insights.push({type:'consejo', icon:'📝', title:'Sin movimientos hoy', description:'No registraste movimientos hoy. Mantener el hábito diario ayuda a tener un control más preciso.'});
+  }
+
+  return insights;
+}
+function renderInsights(){
+  const cont = document.getElementById('insights-grid'); if(!cont) return;
+  const insights = generarInsights();
+  cont.innerHTML = insights.length
+    ? insights.map((ins,i)=>insightCardHtml(ins,i)).join('')
+    : `<div class="insights-empty">
+        <span class="icon-big">✨</span>
+        <div class="display">Aún no hay suficientes datos</div>
+        <p>Conforme registres más movimientos, aquí aparecerán recomendaciones personalizadas sobre tus finanzas.</p>
+      </div>`;
+}
+
 function ledgerRowHtml(m){
   const cat = categorias.find(c=>c.id===m.categoria_id);
   const cta = cuentas.find(c=>c.id===m.cuenta_id);
