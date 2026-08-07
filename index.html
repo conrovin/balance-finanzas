@@ -249,6 +249,7 @@
   .chart-filtro-periodo{margin-left:auto;padding:7px 10px;font-size:12.5px;}
 
   .linechart-svg{width:100%;height:220px;display:block;}
+  .chart-fade{animation:fadeIn .25s ease;}
   .chart-x-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted-2);padding:0 6px;margin-top:6px;}
 
   .dash-bottom-row{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin-bottom:24px;}
@@ -729,16 +730,16 @@
           <div class="chart-card-head">
             <div><h3>Ingresos vs Gastos</h3><p class="chart-sub" id="chart-principal-sub">Últimos 6 meses</p></div>
             <div class="chart-controls">
-              <label class="chart-check ingreso"><input type="checkbox" id="chk-serie-ingresos" checked onchange="renderChartPrincipal()">Ingresos</label>
-              <label class="chart-check gasto"><input type="checkbox" id="chk-serie-gastos" checked onchange="renderChartPrincipal()">Gastos</label>
-              <label class="chart-check patrimonio"><input type="checkbox" id="chk-serie-patrimonio" onchange="renderChartPrincipal()">Patrimonio</label>
+              <label class="chart-check ingreso"><input type="checkbox" id="chk-serie-ingresos" checked onchange="toggleSerieChart('showIncome', this.checked)">Ingresos</label>
+              <label class="chart-check gasto"><input type="checkbox" id="chk-serie-gastos" checked onchange="toggleSerieChart('showExpenses', this.checked)">Gastos</label>
+              <label class="chart-check patrimonio"><input type="checkbox" id="chk-serie-patrimonio" onchange="toggleSerieChart('showNetWorth', this.checked)">Patrimonio</label>
             </div>
           </div>
           <div class="chart-tabs">
             <button class="chart-tab active" id="tab-lineas" onclick="setChartTab('lineas')">Líneas</button>
             <button class="chart-tab" id="tab-barras" onclick="setChartTab('barras')">Barras</button>
-            <select class="filter chart-filtro-periodo" id="chart-filtro-periodo">
-              <option>Diario</option><option>Semanal</option><option selected>Mensual</option><option>Anual</option>
+            <select class="filter chart-filtro-periodo" id="chart-filtro-periodo" onchange="cambiarGranularidadChart(this.value)">
+              <option value="diario">Diario</option><option value="semanal">Semanal</option><option value="mensual" selected>Mensual</option><option value="anual">Anual</option>
             </select>
           </div>
           <div id="chart-principal"></div>
@@ -960,6 +961,7 @@ let session = null;
 let cuentas = [], categorias = [], movimientos = [], config = null;
 let dashPeriodo = 'mes_actual'; // único estado global del período: alimenta KPIs, gráficos y donut del Dashboard
 let dashRango = null;
+let dashChartState = { chartType:'lineas', granularidad:'mensual', showIncome:true, showExpenses:true, showNetWorth:false };
 let tipoMovimientoActual = 'gasto';
 let tipoCategoriaActual = 'gasto';
 
@@ -1330,6 +1332,26 @@ function lineChartSvg(seriesList, nPuntos){
   svg += `</svg>`;
   return svg;
 }
+function barChartSvg(seriesList, nPuntos){
+  const w=640,h=220,padT=14,padB=10;
+  const allVals = seriesList.flatMap(s=>s.data).concat([0]);
+  const max = Math.max(1, ...allVals);
+  const slot = w/Math.max(1,nPuntos);
+  const gap = Math.min(6, slot*0.15);
+  const barW = Math.max(1.5, (slot - gap*2) / seriesList.length);
+  let svg = `<svg viewBox="0 0 ${w} ${h}" class="linechart-svg" preserveAspectRatio="none">`;
+  for(let i=0;i<nPuntos;i++){
+    seriesList.forEach((s,si)=>{
+      const v = s.data[i]||0;
+      const barH = (v/max)*(h-padT-padB);
+      const x = i*slot + gap + si*barW;
+      const y = h-padB-barH;
+      svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(barW-1.5).toFixed(1)}" height="${Math.max(0,barH).toFixed(1)}" rx="2" fill="${s.color}"></rect>`;
+    });
+  }
+  svg += `</svg>`;
+  return svg;
+}
 function donutSvg(segments){
   const total = segments.reduce((s,x)=>s+x.value,0) || 1;
   const r=54, cx=64, cy=64, circ=2*Math.PI*r;
@@ -1348,22 +1370,86 @@ window.cambiarPeriodoDashboard = function(valor){
   renderDashboard();
 };
 window.setChartTab = function(tab){
+  dashChartState.chartType = tab;
   document.getElementById('tab-lineas').classList.toggle('active', tab==='lineas');
   document.getElementById('tab-barras').classList.toggle('active', tab==='barras');
+  renderChartPrincipal();
+};
+window.toggleSerieChart = function(campo, valor){
+  dashChartState[campo] = valor;
+  renderChartPrincipal();
+};
+window.cambiarGranularidadChart = function(valor){
+  dashChartState.granularidad = valor;
+  renderChartPrincipal();
 };
 const EMPTY_CHART_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>`;
-window.renderChartPrincipal = function(){
+function totalEnRango(tipo, desdeStr, hastaStr){
+  return movimientos.filter(m=>m.tipo===tipo && m.fecha>=desdeStr && m.fecha<=hastaStr).reduce((s,m)=>s+aMonedaBase(m.monto,m.moneda),0);
+}
+function diasEnRango(desdeStr, hastaStr){
+  const arr=[]; let d = new Date(desdeStr+'T00:00:00'); const hasta = new Date(hastaStr+'T00:00:00');
+  while(d<=hasta){ arr.push({desde:d.toISOString().slice(0,10), hasta:d.toISOString().slice(0,10), label:String(d.getDate())}); d.setDate(d.getDate()+1); }
+  return arr;
+}
+function semanasEnRango(desdeStr, hastaStr){
+  const dias = diasEnRango(desdeStr, hastaStr);
+  const semanas=[]; let actualKey=null;
+  dias.forEach(d=>{
+    const dt = new Date(d.desde+'T00:00:00');
+    const lunes = new Date(dt); lunes.setDate(dt.getDate() - ((dt.getDay()+6)%7));
+    const key = lunes.toISOString().slice(0,10);
+    if(key!==actualKey){ semanas.push({desde:key, hasta:d.hasta, label:'S'+(semanas.length+1)}); actualKey=key; }
+    else { semanas[semanas.length-1].hasta = d.hasta; }
+  });
+  return semanas;
+}
+function aniosDisponibles(){
+  const now = new Date().getFullYear();
+  const aniosConDatos = movimientos.map(m=>parseInt(m.fecha.slice(0,4)));
+  const minAnio = aniosConDatos.length ? Math.max(Math.min(...aniosConDatos), now-4) : now;
+  const out=[]; for(let y=minAnio;y<=now;y++) out.push({desde:`${y}-01-01`, hasta:`${y}-12-31`, label:String(y)});
+  return out;
+}
+function puntosParaGranularidad(){
+  const desde = dashRango ? dashRango.desdeStr : new Date().toISOString().slice(0,8)+'01';
+  const hasta = dashRango ? dashRango.hastaStr : new Date().toISOString().slice(0,10);
+  const diffDias = Math.round((new Date(hasta)-new Date(desde))/86400000)+1;
+  if(dashChartState.granularidad==='diario'){
+    if(diffDias>62) return {error:'El período seleccionado es muy amplio para vista diaria. Prueba con vista semanal, mensual o anual.'};
+    return {puntos: diasEnRango(desde,hasta)};
+  }
+  if(dashChartState.granularidad==='semanal'){
+    if(diffDias>210) return {error:'El período seleccionado es muy amplio para vista semanal. Prueba con vista mensual o anual.'};
+    return {puntos: semanasEnRango(desde,hasta)};
+  }
+  if(dashChartState.granularidad==='anual'){
+    return {puntos: aniosDisponibles()};
+  }
+  // mensual (default)
   const n = dashRango ? dashRango.mesesTrend : 6;
-  const meses = mesesAtras(n);
-  const serieIng = meses.map(m=>totalPorMes('ingreso', m.ym));
-  const serieGas = meses.map(m=>totalPorMes('gasto', m.ym));
-  const seriePat = meses.map(m=>patrimonioAlFinDeMes(m.ym));
-  const series = [];
-  if(document.getElementById('chk-serie-ingresos').checked) series.push({data:serieIng, color:'var(--green)'});
-  if(document.getElementById('chk-serie-gastos').checked) series.push({data:serieGas, color:'var(--rust)'});
-  if(document.getElementById('chk-serie-patrimonio').checked) series.push({data:seriePat, color:'var(--accent)'});
+  return {puntos: mesesAtras(n).map(m=>{
+    const [y,mo]=m.ym.split('-').map(Number);
+    return {desde:`${m.ym}-01`, hasta:new Date(y,mo,0).toISOString().slice(0,10), label:m.label};
+  })};
+}
+window.renderChartPrincipal = function(){
   const cont = document.getElementById('chart-principal');
   const xLabels = document.getElementById('chart-x-labels');
+  const res = puntosParaGranularidad();
+  if(res.error){
+    cont.innerHTML = `<div class="donut-empty">${EMPTY_CHART_ICON}<span>${res.error}</span></div>`;
+    xLabels.innerHTML = '';
+    return;
+  }
+  const puntos = res.puntos;
+  const serieIng = puntos.map(p=>totalEnRango('ingreso', p.desde, p.hasta));
+  const serieGas = puntos.map(p=>totalEnRango('gasto', p.desde, p.hasta));
+  const seriePat = puntos.map(p=>patrimonioAFecha(p.hasta));
+  const series = [];
+  if(dashChartState.showIncome) series.push({data:serieIng, color:'var(--green)'});
+  if(dashChartState.showExpenses) series.push({data:serieGas, color:'var(--rust)'});
+  if(dashChartState.showNetWorth) series.push({data:seriePat, color:'var(--accent)'});
   if(!series.length){
     cont.innerHTML = `<div class="donut-empty">${EMPTY_CHART_ICON}<span>Selecciona al menos una serie para visualizar.</span></div>`;
     xLabels.innerHTML = '';
@@ -1371,12 +1457,12 @@ window.renderChartPrincipal = function(){
   }
   const hayDatos = series.some(s=>s.data.some(v=>v!==0));
   if(!hayDatos){
-    cont.innerHTML = `<div class="donut-empty">${EMPTY_CHART_ICON}<span>No hay movimientos registrados en este periodo.</span></div>`;
+    cont.innerHTML = `<div class="donut-empty">${EMPTY_CHART_ICON}<span>No hay movimientos suficientes para mostrar este gráfico.</span></div>`;
     xLabels.innerHTML = '';
     return;
   }
-  cont.innerHTML = lineChartSvg(series, meses.length);
-  xLabels.innerHTML = meses.map(m=>`<span>${m.label}</span>`).join('');
+  cont.innerHTML = `<div class="chart-fade">${dashChartState.chartType==='barras' ? barChartSvg(series, puntos.length) : lineChartSvg(series, puntos.length)}</div>`;
+  xLabels.innerHTML = puntos.map(p=>`<span>${p.label}</span>`).join('');
 };
 function renderChartPatrimonio(){
   const n = dashRango ? dashRango.mesesTrend : 6;
